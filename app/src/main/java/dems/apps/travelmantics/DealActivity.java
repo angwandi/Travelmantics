@@ -1,5 +1,6 @@
 package dems.apps.travelmantics;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -17,17 +18,30 @@ public class DealActivity extends AppCompatActivity {
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference databaseReference;
     EditText txtTitle, txtDescription, txtPrice;
+    TravelDeal deal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_insert);
+
         txtTitle = findViewById(R.id.txtTitle);
         txtDescription = findViewById(R.id.txtDescription);
         txtPrice = findViewById(R.id.txtPrice);
+
         FirebaseUtil.openFbReference("traveldeals");
         firebaseDatabase = FirebaseUtil.firebaseDatabase;
         databaseReference = FirebaseUtil.databaseReference;
+
+        Intent intent = getIntent();
+        TravelDeal deal = (TravelDeal) intent.getSerializableExtra("Deal");
+        if (deal == null) {
+            deal = new TravelDeal();
+        }
+        this.deal = deal;
+        txtTitle.setText(deal.getTitle());
+        txtDescription.setText(deal.getDescription());
+        txtPrice.setText(deal.getPrice());
     }
 
 
