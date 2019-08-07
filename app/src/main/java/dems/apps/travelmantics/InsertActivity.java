@@ -25,8 +25,9 @@ public class InsertActivity extends AppCompatActivity {
         txtTitle = findViewById(R.id.txtTitle);
         txtDescription = findViewById(R.id.txtDescription);
         txtPrice = findViewById(R.id.txtPrice);
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        databaseReference = firebaseDatabase.getReference().child("traveldeals");
+        FirebaseUtil.openFbReference("traveldeals");
+        firebaseDatabase = FirebaseUtil.firebaseDatabase;
+        databaseReference = FirebaseUtil.databaseReference;
     }
 
 
@@ -65,6 +66,7 @@ public class InsertActivity extends AppCompatActivity {
     private void deleteDeal() {
         //todo
     }
+
     private void clear() {
         txtTitle.setText("");
         txtDescription.setText("");
