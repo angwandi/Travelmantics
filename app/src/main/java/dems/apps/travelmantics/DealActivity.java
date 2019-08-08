@@ -1,37 +1,55 @@
 package dems.apps.travelmantics;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.StorageReference;
+
+import java.util.Objects;
 
 public class DealActivity extends AppCompatActivity {
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference databaseReference;
     EditText txtTitle, txtDescription, txtPrice;
     TravelDeal deal;
+    private static final int PICTURE_RESULT = 42;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_insert);
+        setContentView(R.layout.activity_deal);
+
+        firebaseDatabase = FirebaseUtil.firebaseDatabase;
+        databaseReference = FirebaseUtil.databaseReference;
 
         txtTitle = findViewById(R.id.txtTitle);
         txtDescription = findViewById(R.id.txtDescription);
         txtPrice = findViewById(R.id.txtPrice);
+        Button btnImage = findViewById(R.id.btnImage);
 
-        FirebaseUtil.openFbReference("traveldeals");
-        firebaseDatabase = FirebaseUtil.firebaseDatabase;
-        databaseReference = FirebaseUtil.databaseReference;
+        btnImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("image/jpeg");
+                intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+                startActivityForResult(Intent.createChooser(intent, "Insert Picture"), PICTURE_RESULT);
+            }
+        });
 
         Intent intent = getIntent();
         TravelDeal deal = (TravelDeal) intent.getSerializableExtra("Deal");
@@ -68,6 +86,17 @@ public class DealActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.save_menu, menu);
+        if (FirebaseUtil.isAdmin) {
+            menu.findItem(R.id.delete_menu).setVisible(true);
+            menu.findItem(R.id.save_menu).setVisible(true);
+            enableEditTexts(true);
+        } else {
+            menu.findItem(R.id.delete_menu).setVisible(false);
+            menu.findItem(R.id.save_menu).setVisible(false);
+            enableEditTexts(false);
+        }
+
+
         return true;
     }
 
@@ -103,4 +132,21 @@ public class DealActivity extends AppCompatActivity {
         txtTitle.requestFocus();
     }
 
+    private void enableEditTexts(boolean isEnabled) {
+        txtTitle.setEnabled(isEnabled);
+        txtDescription.setEnabled(isEnabled);
+        txtPrice.setEnabled(isEnabled);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICTURE_RESULT && resultCode == RESULT_OK) {
+            assert data != null;
+            Uri imageUri = data.getData();
+            assert imageUri != null;
+            StorageReference ref = FirebaseUtil.storageReference.child(Objects.requireNonNull(imageUri.getLastPathSegment()));
+            ref.putFile(imageUri);
+        }
+    }
 }

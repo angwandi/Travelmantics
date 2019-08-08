@@ -7,4 +7,6 @@
     <string name="insert_new_deal">New Travel Deal</string>
     <string name="delete_menu">delete deal</string>
     <string name="title_activity_list">ListActivity</string>
+    <string name="logout_menu">Logout</string>
+    <string name="upload_image">Upload Image</string>
 </resources>
