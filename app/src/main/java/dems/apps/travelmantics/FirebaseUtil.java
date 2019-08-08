@@ -3,7 +3,6 @@ package dems.apps.travelmantics;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
@@ -20,29 +19,29 @@ import java.util.Arrays;
 import java.util.List;
 
 public class FirebaseUtil {
-    public static FirebaseDatabase firebaseDatabase;
-    public static DatabaseReference databaseReference;
+    public static FirebaseDatabase mFirebaseDatabase;
+    public static DatabaseReference mDatabaseReference;
+    public static FirebaseAuth mFirebaseAuth;
+    public static FirebaseStorage mStorage;
+    public static StorageReference mStorageRef;
+    public static FirebaseAuth.AuthStateListener mAuthListener;
+    public static boolean isAdmin;
     public static ArrayList<TravelDeal> mDeals;
     private static final int RC_SIGN_IN = 123;
-    public static FirebaseAuth firebaseAuth;
+    private static ListActivity caller;
     private static FirebaseUtil firebaseUtil;
-    public static FirebaseAuth.AuthStateListener authListener;
-    public static FirebaseStorage firebaseStorage;
-    public static StorageReference storageReference;
-    public static boolean isAdmin;
 
     private FirebaseUtil() {
     }
 
-    private static ListActivity caller;
-
     public static void openFbReference(String ref, final ListActivity callerActivity) {
         if (firebaseUtil == null) {
             firebaseUtil = new FirebaseUtil();
-            firebaseDatabase = FirebaseDatabase.getInstance();
-            firebaseAuth = FirebaseAuth.getInstance();
+            mFirebaseDatabase = FirebaseDatabase.getInstance();
+            mFirebaseAuth = FirebaseAuth.getInstance();
             caller = callerActivity;
-            authListener = new FirebaseAuth.AuthStateListener() {
+
+            mAuthListener = new FirebaseAuth.AuthStateListener() {
                 @Override
                 public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                     if (firebaseAuth.getCurrentUser() == null) {
@@ -55,68 +54,72 @@ public class FirebaseUtil {
                 }
             };
             connectStorage();
+
         }
+
         mDeals = new ArrayList<>();
-        databaseReference = firebaseDatabase.getReference().child(ref);
+        mDatabaseReference = mFirebaseDatabase.getReference().child(ref);
+    }
+
+    private static void signIn() {
+        // Choose authentication providers
+        List<AuthUI.IdpConfig> providers = Arrays.asList(
+                new AuthUI.IdpConfig.EmailBuilder().build(),
+                new AuthUI.IdpConfig.GoogleBuilder().build());
+
+// Create and launch sign-in intent
+        caller.startActivityForResult(
+                AuthUI.getInstance()
+                        .createSignInIntentBuilder()
+                        .setAvailableProviders(providers)
+                        .setIsSmartLockEnabled(false)
+                        .build(),
+                RC_SIGN_IN);
     }
 
     private static void checkAdmin(String uid) {
         FirebaseUtil.isAdmin = false;
-        DatabaseReference reference = firebaseDatabase.getReference().child("administrator").child(uid);
+        DatabaseReference ref = mFirebaseDatabase.getReference().child("administrators")
+                .child(uid);
         ChildEventListener listener = new ChildEventListener() {
             @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 FirebaseUtil.isAdmin = true;
                 caller.showMenu();
             }
 
             @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
 
             }
 
             @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
 
             }
 
             @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
 
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            public void onCancelled(DatabaseError databaseError) {
 
             }
         };
-        reference.addChildEventListener(listener);
+        ref.addChildEventListener(listener);
     }
 
-    private static void signIn() {
-        List<AuthUI.IdpConfig> providers = Arrays.asList(
-                new AuthUI.IdpConfig.EmailBuilder().build(),
-                new AuthUI.IdpConfig.GoogleBuilder().build());
-
-        // Create and launch sign-in intent
-        caller.startActivityForResult(
-                AuthUI.getInstance()
-                        .createSignInIntentBuilder()
-                        .setAvailableProviders(providers)
-                        .build(),
-                RC_SIGN_IN);
+    public static void attachListener() {
+        mFirebaseAuth.addAuthStateListener(mAuthListener);
     }
 
-    public static void attacheListner() {
-        firebaseAuth.addAuthStateListener(authListener);
+    public static void detachListener() {
+        mFirebaseAuth.removeAuthStateListener(mAuthListener);
     }
-
-    public static void detacheListner() {
-        firebaseAuth.removeAuthStateListener(authListener);
-    }
-
     public static void connectStorage() {
-        firebaseStorage = FirebaseStorage.getInstance();
-        storageReference = firebaseStorage.getReference().child("deals_pictures");
+        mStorage = FirebaseStorage.getInstance();
+        mStorageRef = mStorage.getReference().child("deals_pictures");
     }
 }

@@ -2,10 +2,10 @@ package dems.apps.travelmantics;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +21,7 @@ public class ListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
+
     }
 
     @Override
@@ -28,49 +29,42 @@ public class ListActivity extends AppCompatActivity {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.list_activity_menu, menu);
         MenuItem insertMenu = menu.findItem(R.id.insert_menu);
-        if (FirebaseUtil.isAdmin) {
+        if (FirebaseUtil.isAdmin == true) {
             insertMenu.setVisible(true);
         } else {
             insertMenu.setVisible(false);
         }
+
+
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+    public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.insert_menu:
                 Intent intent = new Intent(this, DealActivity.class);
                 startActivity(intent);
                 return true;
             case R.id.logout_menu:
-                logout();
-                Toast.makeText(this, "Logging out ...", Toast.LENGTH_LONG).show();
+                AuthUI.getInstance()
+                        .signOut(this)
+                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                            public void onComplete(@NonNull Task<Void> task) {
+                                Log.d("Logout", "User Logged Out");
+                                FirebaseUtil.attachListener();
+                            }
+                        });
+                FirebaseUtil.detachListener();
                 return true;
-            default:
-                return super.onOptionsItemSelected(item);
         }
-    }
-
-    private void logout() {
-        AuthUI.getInstance()
-                .signOut(this)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    public void onComplete(@NonNull Task<Void> task) {
-                        FirebaseUtil.attacheListner();
-                    }
-                });
-        FirebaseUtil.detacheListner();
-    }
-
-    public void showMenu() {
-        invalidateOptionsMenu();
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        FirebaseUtil.detacheListner();
+        FirebaseUtil.detachListener();
     }
 
     @Override
@@ -80,8 +74,13 @@ public class ListActivity extends AppCompatActivity {
         RecyclerView rvDeals = findViewById(R.id.rvDeals);
         final DealAdapter adapter = new DealAdapter();
         rvDeals.setAdapter(adapter);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, RecyclerView.VERTICAL, false);
-        rvDeals.setLayoutManager(layoutManager);
-        FirebaseUtil.attacheListner();
+        LinearLayoutManager dealsLayoutManager =
+                new LinearLayoutManager(this, RecyclerView.VERTICAL, false);
+        rvDeals.setLayoutManager(dealsLayoutManager);
+        FirebaseUtil.attachListener();
+    }
+
+    public void showMenu() {
+        invalidateOptionsMenu();
     }
 }
