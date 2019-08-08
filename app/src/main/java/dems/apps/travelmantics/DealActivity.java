@@ -52,10 +52,12 @@ public class DealActivity extends AppCompatActivity {
                 saveDeal();
                 Toast.makeText(this, "Deal saved!", Toast.LENGTH_LONG).show();
                 clear();
+                backToList();
                 return true;
             case R.id.delete_menu:
                 deleteDeal();
                 Toast.makeText(this, "Deal Deleted!", Toast.LENGTH_LONG).show();
+                backToList();
                 return true;
             default:
                 return onOptionsItemSelected(item);
@@ -70,15 +72,28 @@ public class DealActivity extends AppCompatActivity {
     }
 
     private void saveDeal() {
-        String title = txtTitle.getText().toString();
-        String description = txtDescription.getText().toString();
-        String price = txtPrice.getText().toString();
-        TravelDeal deal = new TravelDeal(title, description, price, "");
-        databaseReference.push().setValue(deal);
+        deal.setTitle(txtTitle.getText().toString());
+        deal.setDescription(txtDescription.getText().toString());
+        deal.setPrice(txtPrice.getText().toString());
+        if (deal.getId() == null) {
+            databaseReference.push().setValue(deal);
+        } else {
+            databaseReference.child(deal.getId()).setValue(deal);
+        }
     }
 
     private void deleteDeal() {
-        //todo
+        if (deal == null) {
+            Toast.makeText(this, "Please save deal before deleting", Toast.LENGTH_LONG).show();
+        } else {
+            databaseReference.child(deal.getId()).removeValue();
+        }
+    }
+
+    //return to list after save
+    private void backToList() {
+        Intent intent = new Intent(this, ListActivity.class);
+        startActivity(intent);
     }
 
     private void clear() {
